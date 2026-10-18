@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework.filters import SearchFilter
 
-from .models import Profile
+from .models import Profile, Follow
 from .serializers import (
     UserLoginSerializer,
     UserRegistrationSerializer,
@@ -76,3 +76,50 @@ class UserSearchView(generics.ListAPIView):
     queryset = get_user_model().objects.all()
     filter_backends = [SearchFilter]
     search_fields = ["username"]
+
+
+class FollowUserView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, username):
+        target_user = get_object_or_404(
+            get_user_model(),
+            username=username,
+        )
+
+        if target_user == request.user:
+            return Response(
+                {"detail": "You cannot follow yourself."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        _, created = Follow.objects.get_or_create(
+            follower=request.user,
+            following=target_user,
+        )
+
+        if not created:
+            return Response(
+                {"detail": "Already following this user."},
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(
+            {"detail": "Followed successfully."},
+            status=status.HTTP_201_CREATED,
+        )
+
+    def delete(self, request, username):
+        target_user = get_object_or_404(
+            get_user_model(),
+            username=username,
+        )
+
+        Follow.objects.filter(
+            follower=request.user,
+            following=target_user,
+        ).delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+

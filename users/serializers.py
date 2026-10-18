@@ -1,5 +1,7 @@
 from django.contrib.auth import authenticate, get_user_model
-from rest_framework import serializers
+from rest_framework import serializers, generics
+from rest_framework.permissions import IsAuthenticated
+
 from .models import Profile
 
 
@@ -65,3 +67,22 @@ class UserSearchSerializer(serializers.ModelSerializer):
         model = User
         fields = ("id", "username")
 
+
+class FollowingListView(generics.ListAPIView):
+    serializer_class = UserSearchSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return get_user_model().objects.filter(
+            follower_relations__follower=self.request.user
+        ).distinct().order_by("username")
+
+
+class FollowersListView(generics.ListAPIView):
+    serializer_class = UserSearchSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return get_user_model().objects.filter(
+            following_relations__following=self.request.user
+        ).distinct().order_by("username")

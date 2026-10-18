@@ -1,5 +1,6 @@
 from django.urls import path
 
+from .serializers import FollowingListView, FollowersListView
 from .views import (
     UserLoginView,
     UserRegistrationView,
@@ -7,6 +8,7 @@ from .views import (
     ProfileView,
     PublicProfileView,
     UserSearchView,
+    FollowUserView,
 )
 
 urlpatterns = [
@@ -39,5 +41,20 @@ urlpatterns = [
         "search/",
         UserSearchView.as_view(),
         name="user-search",
+    ),
+    path(
+        "follow/<str:username>/",
+        FollowUserView.as_view(),
+        name="user-follow",
+    ),
+    path(
+        "following/",
+        FollowingListView.as_view(),
+        name="following-list",
+    ),
+    path(
+        "followers/",
+        FollowersListView.as_view(),
+        name="followers-list",
     ),
 ]
