@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework import generics, status
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -40,6 +41,12 @@ class UserLoginView(generics.GenericAPIView):
 class UserLogoutView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        request=None,
+        responses={
+            204: OpenApiResponse(description="Logged out successfully."),
+        },
+    )
     def post(self, request, *args, **kwargs):
         Token.objects.filter(user=request.user).delete()
 
@@ -81,6 +88,15 @@ class UserSearchView(generics.ListAPIView):
 class FollowUserView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        request=None,
+        responses={
+            201: OpenApiResponse(description="Followed successfully."),
+            200: OpenApiResponse(description="Already following this user."),
+            400: OpenApiResponse(description="Cannot follow yourself."),
+            404: OpenApiResponse(description="User not found."),
+        },
+    )
     def post(self, request, username):
         target_user = get_object_or_404(
             get_user_model(),
@@ -109,6 +125,13 @@ class FollowUserView(generics.GenericAPIView):
             status=status.HTTP_201_CREATED,
         )
 
+    @extend_schema(
+        request=None,
+        responses={
+            204: OpenApiResponse(description="Unfollowed successfully."),
+            404: OpenApiResponse(description="User not found."),
+        },
+    )
     def delete(self, request, username):
         target_user = get_object_or_404(
             get_user_model(),
@@ -121,5 +144,3 @@ class FollowUserView(generics.GenericAPIView):
         ).delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
