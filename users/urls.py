@@ -1,14 +1,15 @@
 from django.urls import path
 
-from .serializers import FollowingListView, FollowersListView
 from .views import (
-    UserLoginView,
-    UserRegistrationView,
-    UserLogoutView,
+    FollowersListView,
+    FollowingListView,
+    FollowUserView,
     ProfileView,
     PublicProfileView,
+    UserLoginView,
+    UserLogoutView,
+    UserRegistrationView,
     UserSearchView,
-    FollowUserView,
 )
 
 urlpatterns = [

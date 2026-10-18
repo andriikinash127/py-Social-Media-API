@@ -1,6 +1,9 @@
 from django.db.models import Q
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.permissions import (
+    IsAuthenticatedOrReadOnly,
+    IsAuthenticated,
+)
 
 from .models import Post
 from .permissions import IsAuthorOrReadOnly
@@ -30,9 +33,7 @@ class PostFeedView(generics.ListAPIView):
         return (
             Post.objects.filter(
                 Q(author=self.request.user)
-                | Q(
-                    author__follower_relations__follower=self.request.user
-                )
+                | Q(author__follower_relations__follower=self.request.user)
             )
             .select_related("author")
             .distinct()

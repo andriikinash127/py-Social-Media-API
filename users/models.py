@@ -47,9 +47,7 @@ class Follow(models.Model):
                 name="unique_user_follow",
             ),
             models.CheckConstraint(
-                condition=~models.Q(
-                    follower=models.F("following")
-                ),
+                condition=~models.Q(follower=models.F("following")),
                 name="prevent_self_follow",
             ),
         ]
@@ -57,4 +55,3 @@ class Follow(models.Model):
 
     def __str__(self):
         return f"{self.follower.username} follows {self.following.username}"
-

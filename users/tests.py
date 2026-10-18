@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from users.models import Follow
+from users.models import Follow, Profile
 
 User = get_user_model()
 
@@ -68,9 +68,7 @@ class UserLogoutTests(APITestCase):
         )
         self.token = Token.objects.create(user=self.user)
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Token {self.token.key}"
-        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
 
     def test_logout_deletes_token(self):
         response = self.client.post("/api/users/logout/")
@@ -79,9 +77,7 @@ class UserLogoutTests(APITestCase):
             response.status_code,
             status.HTTP_204_NO_CONTENT,
         )
-        self.assertFalse(
-            Token.objects.filter(user=self.user).exists()
-        )
+        self.assertFalse(Token.objects.filter(user=self.user).exists())
 
     def test_login_with_wrong_password(self):
         response = self.client.post(
@@ -114,14 +110,10 @@ class UserFollowTests(APITestCase):
         )
 
         self.token = Token.objects.create(user=self.follower)
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Token {self.token.key}"
-        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
 
     def test_user_can_follow_another_user(self):
-        response = self.client.post(
-            "/api/users/follow/following/"
-        )
+        response = self.client.post("/api/users/follow/following/")
 
         self.assertEqual(
             response.status_code,
@@ -140,9 +132,7 @@ class UserFollowTests(APITestCase):
             following=self.following,
         )
 
-        response = self.client.post(
-            "/api/users/follow/following/"
-        )
+        response = self.client.post("/api/users/follow/following/")
 
         self.assertEqual(
             response.status_code,
@@ -151,9 +141,8 @@ class UserFollowTests(APITestCase):
         self.assertEqual(Follow.objects.count(), 1)
 
     def test_cannot_follow_self(self):
-        response = self.client.post(
-            f"/api/users/follow/{self.follower.username}/"
-        )
+        response = self.client.post(f"/api/users/follow/"
+                                    f"{self.follower.username}/")
 
         self.assertEqual(
             response.status_code,
@@ -165,3 +154,98 @@ class UserFollowTests(APITestCase):
                 following=self.follower,
             ).exists()
         )
+
+    def test_user_can_unfollow_another_user(self):
+        Follow.objects.create(
+            follower=self.follower,
+            following=self.following,
+        )
+
+        response = self.client.delete(f"/api/users/follow/"
+                                      f"{self.following.username}/")
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_204_NO_CONTENT,
+        )
+        self.assertFalse(
+            Follow.objects.filter(
+                follower=self.follower,
+                following=self.following,
+            ).exists()
+        )
+
+    def test_user_can_get_following_list(self):
+        Follow.objects.create(
+            follower=self.follower,
+            following=self.following,
+        )
+
+        response = self.client.get("/api/users/following/")
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            response.data[0]["username"],
+            self.following.username,
+        )
+
+    def test_user_can_get_followers_list(self):
+        Follow.objects.create(
+            follower=self.follower,
+            following=self.following,
+        )
+
+        token = Token.objects.create(user=self.following)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+        response = self.client.get("/api/users/followers/")
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            response.data[0]["username"],
+            self.follower.username,
+        )
+
+
+class ProfileViewTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="profile@example.com",
+            username="profileuser",
+            password="StrongPass123",
+        )
+        token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+    def test_get_own_profile_creates_profile(self):
+        response = self.client.get("/api/users/me/")
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertTrue(Profile.objects.filter(user=self.user).exists())
+
+
+class PublicProfileViewTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="public@example.com",
+            username="publicuser",
+            password="StrongPass123",
+        )
+
+    def test_get_public_profile_creates_profile(self):
+        response = self.client.get("/api/users/profiles/publicuser/")
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertTrue(Profile.objects.filter(user=self.user).exists())

@@ -57,6 +57,29 @@ class PostPermissionTests(APITestCase):
         post.refresh_from_db()
         self.assertEqual(post.content, "Original content")
 
+    def test_anonymous_user_can_view_single_post(self):
+        User = get_user_model()
+        author = User.objects.create_user(
+            email="detail@example.com",
+            username="detailuser",
+            password="StrongPass123",
+        )
+        post = Post.objects.create(
+            author=author,
+            content="Public detail post",
+        )
+
+        response = self.client.get(f"/api/posts/{post.id}/")
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            response.data["content"],
+            "Public detail post",
+        )
+
 
 class PostFeedTests(APITestCase):
     def setUp(self):
@@ -97,9 +120,7 @@ class PostFeedTests(APITestCase):
         )
 
         token = Token.objects.create(user=self.user)
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Token {token.key}"
-        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
 
     def test_feed_contains_own_and_followed_posts(self):
         response = self.client.get("/api/posts/feed/")
@@ -109,10 +130,64 @@ class PostFeedTests(APITestCase):
             status.HTTP_200_OK,
         )
 
-        contents = [
-            post["content"] for post in response.data
-        ]
+        contents = [post["content"] for post in response.data]
 
         self.assertIn("My own post", contents)
         self.assertIn("Post from followed user", contents)
         self.assertNotIn("Post from unfollowed user", contents)
+
+
+class PostCreateTests(APITestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_user(
+            email="creator@example.com",
+            username="creator",
+            password="StrongPass123",
+        )
+        token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+    def test_authenticated_user_can_create_post(self):
+        response = self.client.post(
+            "/api/posts/",
+            {
+                "content": "My new post",
+                "author": "someone_else",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+        self.assertEqual(response.data["author"], "creator")
+
+        post = Post.objects.get()
+        self.assertEqual(post.author, self.user)
+        self.assertEqual(post.content, "My new post")
+
+    def test_anonymous_user_can_view_posts(self):
+        User = get_user_model()
+        author = User.objects.create_user(
+            email="reader@example.com",
+            username="reader",
+            password="StrongPass123",
+        )
+        Post.objects.create(
+            author=author,
+            content="Public post",
+        )
+
+        response = self.client.get("/api/posts/")
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(
+            response.data[0]["content"],
+            "Public post",
+        )

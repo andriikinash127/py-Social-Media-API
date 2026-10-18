@@ -4,7 +4,6 @@ from rest_framework.permissions import IsAuthenticated
 
 from .models import Profile
 
-
 User = get_user_model()
 
 
@@ -37,9 +36,7 @@ class UserLoginSerializer(serializers.Serializer):
         )
 
         if not user:
-            raise serializers.ValidationError(
-                "Wrong email or password."
-            )
+            raise serializers.ValidationError("Wrong email or password.")
 
         attrs["user"] = user
         return attrs
@@ -73,16 +70,9 @@ class FollowingListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return get_user_model().objects.filter(
-            follower_relations__follower=self.request.user
-        ).distinct().order_by("username")
-
-
-class FollowersListView(generics.ListAPIView):
-    serializer_class = UserSearchSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return get_user_model().objects.filter(
-            following_relations__following=self.request.user
-        ).distinct().order_by("username")
+        return (
+            get_user_model()
+            .objects.filter(follower_relations__follower=self.request.user)
+            .distinct()
+            .order_by("username")
+        )

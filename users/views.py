@@ -58,9 +58,7 @@ class ProfileView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        profile, _ = Profile.objects.get_or_create(
-            user=self.request.user
-        )
+        profile, _ = Profile.objects.get_or_create(user=self.request.user)
         return profile
 
 
@@ -144,3 +142,29 @@ class FollowUserView(generics.GenericAPIView):
         ).delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class FollowingListView(generics.ListAPIView):
+    serializer_class = UserSearchSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return (
+            get_user_model()
+            .objects.filter(follower_relations__follower=self.request.user)
+            .distinct()
+            .order_by("username")
+        )
+
+
+class FollowersListView(generics.ListAPIView):
+    serializer_class = UserSearchSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return (
+            get_user_model()
+            .objects.filter(following_relations__following=self.request.user)
+            .distinct()
+            .order_by("username")
+        )
