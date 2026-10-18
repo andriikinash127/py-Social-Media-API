@@ -56,7 +56,18 @@ python manage.py runserver
 
 The API will be available at `http://127.0.0.1:8000/`.
 
-## API Endpoints
+## API Documentation
+
+Interactive API documentation is available through Swagger UI:
+
+- Swagger UI: http://127.0.0.1:8000/api/docs/
+- OpenAPI schema: http://127.0.0.1:8000/api/schema/
+
+Start the development server before opening the documentation:
+
+```bash
+python manage.py runserver
+```
 
 ### Authentication
 
@@ -80,6 +91,7 @@ The API will be available at `http://127.0.0.1:8000/`.
 ### Posts
 
 | Method | Endpoint | Description |
+|---|---|---|
 | GET, POST | `/api/posts/` | List posts or create a post |
 | GET | `/api/posts/<id>/` | Retrieve a post |
 | PUT, PATCH | `/api/posts/<id>/` | Update a post |
