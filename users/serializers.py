@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate, get_user_model
 from rest_framework import serializers
+from .models import Profile
 
 
 User = get_user_model()
@@ -40,3 +41,27 @@ class UserLoginSerializer(serializers.Serializer):
 
         attrs["user"] = user
         return attrs
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(
+        source="user.username",
+        read_only=True,
+    )
+
+    class Meta:
+        model = Profile
+        fields = (
+            "id",
+            "username",
+            "bio",
+            "profile_picture",
+        )
+        read_only_fields = ("id", "username")
+
+
+class UserSearchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("id", "username")
+

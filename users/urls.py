@@ -3,7 +3,10 @@ from django.urls import path
 from .views import (
     UserLoginView,
     UserRegistrationView,
-    UserLogoutView
+    UserLogoutView,
+    ProfileView,
+    PublicProfileView,
+    UserSearchView,
 )
 
 urlpatterns = [
@@ -21,5 +24,20 @@ urlpatterns = [
         "logout/",
         UserLogoutView.as_view(),
         name="user-logout",
+    ),
+    path(
+        "me/",
+        ProfileView.as_view(),
+        name="my-profile",
+    ),
+    path(
+        "profiles/<str:username>/",
+        PublicProfileView.as_view(),
+        name="public-profile",
+    ),
+    path(
+        "search/",
+        UserSearchView.as_view(),
+        name="user-search",
     ),
 ]
